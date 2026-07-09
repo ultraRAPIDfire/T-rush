@@ -18,24 +18,31 @@ export default function LoginPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-    const handleGitHubLogin = async () => {
-        setLoading(true);
-        setMessage(null);
-        try {
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-              // Hardcode your production Vercel deployment URL destination parameter directly
-              redirectTo: 'https://t-rush-zeta.vercel.app',
-            },
-          });
-          if (error) throw error;
-        } catch (err: unknown) {
-          const errorMessage = err instanceof Error ? err.message : 'GitHub OAuth initialization failure';
-          setMessage({ type: 'error', text: errorMessage });
-          setLoading(false);
-        }
-      };
+const handleGitHubLogin = async () => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      // 1. Detect if the app is currently running on the live Vercel server or local machine
+      const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+      
+      // 2. Assign the redirect URL precisely based on environment
+      const targetRedirect = isProduction 
+        ? 'https://t-rush-zeta.vercel.app' 
+        : 'http://localhost:3000';
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: targetRedirect,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'GitHub OAuth initialization failure';
+      setMessage({ type: 'error', text: errorMessage });
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full relative bg-[#050507] font-sans antialiased text-neutral-200 select-none flex items-center justify-center p-3 sm:p-4 overflow-x-hidden">
