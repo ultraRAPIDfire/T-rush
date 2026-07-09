@@ -17,10 +17,17 @@ export async function GET(request: Request) {
     
     if (!error && data.session) {
       const cookieStore = await cookies();
+      
+      // Set the exact cookie your middleware expects
       cookieStore.set('sb-access-token', data.session.access_token, {
-        path: '/', secure: true, sameSite: 'lax', maxAge: data.session.expires_in,
+        path: '/',
+        secure: true,
+        sameSite: 'lax',
+        maxAge: data.session.expires_in,
       });
     }
   }
+  
+  // Return to the main page player
   return NextResponse.redirect(requestUrl.origin);
 }
