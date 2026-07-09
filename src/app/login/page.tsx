@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabaseClient';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
