@@ -83,11 +83,11 @@ export default function Feed() {
     }
   }, [tracks.length, selectedGenre, loadAlgorithmicFeed]);
 
-  // Global Keyboard Listening Grid Handler - Spacebar logic removed
+  // Global Keyboard Listening Grid Handler - Arrow Navigation Only
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown'].includes(e.code)) {
-        e.preventDefault(); // Stop default browser page scrolling layout drops
+        e.preventDefault();
       }
 
       if (e.code === 'ArrowUp') {
@@ -148,21 +148,35 @@ export default function Feed() {
           )}
         </div>
 
-        <Link 
-          href="/library"
-          className="pointer-events-auto bg-zinc-950/60 hover:bg-zinc-900/80 border border-zinc-800/40 backdrop-blur-2xl px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] transition-all text-neutral-300 hover:text-emerald-400"
+        {/* Action Controls Group: Library & Log Out */}
+        <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+          <Link 
+            href="/library"
+            className="bg-zinc-950/60 hover:bg-zinc-900/80 border border-zinc-800/40 backdrop-blur-2xl px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] transition-all text-neutral-300 hover:text-emerald-400"
+          >
+            📂 Library
+          </Link>
+          
+        <button 
+          onClick={async () => {
+            await supabase.auth.signOut();
+            // Use window.location.replace to clear the internal router session tree completely
+            window.location.replace('/login');
+          }}
+          className="bg-zinc-950/60 hover:bg-rose-950/40 border border-zinc-800/40 hover:border-rose-900/40 backdrop-blur-2xl px-4 sm:px-5 py-2.5 sm:py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] transition-all text-neutral-400 hover:text-rose-400"
+          title="Disconnect Stream Session"
         >
-          📂 Library
-        </Link>
+          🚪 Exit
+        </button>
+        </div>
       </div>
 
-      {/* STATIC CONTROL ARROWS: Fixed securely to top right layout layers */}
+      {/* Control Arrows */}
       <div className="absolute right-4 sm:right-6 lg:right-12 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-auto">
         <button
           disabled={activeIndex === 0}
           onClick={() => scrollToCardIndex(activeIndex - 1)}
           className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 text-neutral-400 hover:text-emerald-400 disabled:opacity-15 disabled:hover:text-neutral-400 rounded-full backdrop-blur-2xl flex items-center justify-center font-bold text-sm transition-all active:scale-90 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
-          title="Previous Track (Arrow Up)"
         >
           ▲
         </button>
@@ -170,7 +184,6 @@ export default function Feed() {
           disabled={activeIndex === tracks.length - 1}
           onClick={() => scrollToCardIndex(activeIndex + 1)}
           className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-800/80 text-neutral-400 hover:text-emerald-400 disabled:opacity-15 disabled:hover:text-neutral-400 rounded-full backdrop-blur-2xl flex items-center justify-center font-bold text-sm transition-all active:scale-90 shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
-          title="Next Track (Arrow Down)"
         >
           ▼
         </button>
@@ -215,6 +228,7 @@ function TrackVideoCard({
   const [hasError, setHasError] = useState(false);
   const [trackProgress, setTrackProgress] = useState(0);
 
+  // 1. Declared at top so it's fully hoisted inside the lifecycle block scope
   const togglePlay = useCallback(() => {
     if (!audioRef.current || hasError) return;
     if (isPlaying) {
@@ -224,12 +238,14 @@ function TrackVideoCard({
     }
   }, [isPlaying, hasError]);
 
+  // 2. Volume Sync Side Effect
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
 
+  // 3. Focus Auto-Play Sync
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -257,7 +273,7 @@ function TrackVideoCard({
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        alert("Please log in to save tracks to your library collection!");
+        alert("Please log in with GitHub to build your collection library!");
         setIsLiked(false);
         return;
       }
@@ -281,7 +297,7 @@ function TrackVideoCard({
         if (error) throw error;
       }
     } catch (err) {
-      console.error("Database alignment fault:", err);
+      console.error("Database connection failure:", err);
       setIsLiked(!isLiked);
     }
   };
@@ -299,7 +315,7 @@ function TrackVideoCard({
         onError={() => { setHasError(true); setIsPlaying(false); }} 
       />
 
-      {/* Ambient Blur Backdrop Background */}
+      {/* Backdrop Ambient Blur */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none transform scale-105">
         <div 
           style={{ backgroundImage: `url(${track.cover_url})` }} 
@@ -309,14 +325,12 @@ function TrackVideoCard({
         <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-transparent opacity-95" />
       </div>
 
-      {/* Layout Box Container */}
       <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center lg:justify-between relative z-10 px-4 sm:px-8 lg:pl-16 lg:pr-36 pt-24 pb-12 max-w-7xl mx-auto gap-8 lg:gap-16">
         
-        {/* Left Column: Disc Art Display Panel */}
+        {/* Disc Visual Art Frame */}
         <div className="flex-1 w-full flex items-center justify-center relative max-h-[35vh] sm:max-h-[45vh] lg:max-h-none">
           <div onClick={togglePlay} className="relative group cursor-pointer flex items-center justify-center">
             
-            {/* Spinning Record Vinyl Frame */}
             <div className={`absolute w-52 h-52 sm:w-72 sm:h-72 lg:w-[410px] lg:h-[410px] bg-[#09090b] rounded-full shadow-2xl border border-zinc-800/40 hidden sm:flex items-center justify-center transition-all duration-[1000ms] ${
               isPlaying ? 'lg:translate-x-28 rotate-[360deg] [animation-duration:12s]' : 'translate-x-0'
             }`}>
@@ -348,7 +362,7 @@ function TrackVideoCard({
           </div>
         </div>
 
-        {/* Right Column: Player Dashboard Terminal Deck Control Unit */}
+        {/* Dashboard Console Control Unit */}
         <div className="w-full sm:max-w-md lg:w-[400px] bg-zinc-950/45 border border-zinc-900/50 backdrop-blur-3xl p-5 sm:p-6 rounded-2xl sm:rounded-[28px] shadow-2xl relative flex flex-col justify-between gap-5 sm:gap-6 overflow-hidden">
           
           <div 
