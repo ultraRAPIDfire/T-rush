@@ -1,37 +1,26 @@
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
 
   if (code) {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {}
-          },
-        },
-      }
+      { auth: { persistSession: false } }
     );
+
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+    if (!error && data.session) {
+      const cookieStore = await cookies();
+      cookieStore.set('sb-access-token', data.session.access_token, {
+        path: '/', secure: true, sameSite: 'lax', maxAge: data.session.expires_in,
+      });
     }
   }
-
-  // Return user to home page if authentication fails
-  return NextResponse.redirect(`${origin}/login?error=auth-failed`);
+  return NextResponse.redirect(requestUrl.origin);
 }

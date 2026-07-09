@@ -7,7 +7,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
 
-  // Auto-forward the user the exact millisecond the client session becomes active
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -21,11 +20,13 @@ export default function LoginPage() {
     setLoading(true);
     setMessage(null);
     try {
+      const isProduction = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+      const baseOrigin = isProduction ? 'https://t-rush-zeta.vercel.app' : 'http://localhost:3000';
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          // Explicitly forced to live production link
-          redirectTo: 'https://t-rush-zeta.vercel.app',
+          redirectTo: `${baseOrigin}/api/auth/callback`,
         },
       });
       if (error) throw error;
@@ -37,13 +38,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full relative bg-[#050507] font-sans antialiased text-neutral-200 flex items-center justify-center p-4 overflow-x-hidden">
-      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-teal-500/10 rounded-full blur-[160px]" />
-      </div>
-
-      <div className="w-full max-w-5xl bg-zinc-950/45 border border-zinc-900/80 backdrop-blur-3xl rounded-[32px] shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row min-h-[560px]">
+    <div className="min-h-screen w-full relative bg-[#050507] font-sans antialiased text-neutral-200 flex items-center justify-center p-4 overflow-hidden">
+      <div className="w-full max-w-5xl bg-zinc-950/45 border border-zinc-900/80 backdrop-blur-3xl rounded-[32px] shadow-2xl relative z-10 flex flex-col md:flex-row min-h-[560px]">
         <div className="flex-1 p-8 sm:p-12 lg:p-16 flex flex-col justify-between border-b border-zinc-900/60 md:border-b-0 md:border-r border-zinc-900/60">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-emerald-500 text-black font-black flex items-center justify-center rounded-xl text-lg">T</div>
@@ -73,9 +69,8 @@ export default function LoginPage() {
             </div>
             {message && <div className="p-4 rounded-xl text-xs font-bold border bg-rose-500/10 border-rose-500/20 text-rose-400">{message.text}</div>}
             <button
-              disabled={loading}
               onClick={handleGitHubLogin}
-              className="w-full bg-white hover:bg-neutral-100 text-black font-black py-4 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl disabled:opacity-50"
+              className="w-full bg-white hover:bg-neutral-100 text-black font-black py-4 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl transition-all"
             >
               <span>{loading ? 'HANDSHAKING...' : 'Continue with GitHub'}</span>
             </button>
