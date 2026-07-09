@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -7,27 +7,33 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
 
   if (code) {
-    const supabase = createClient(
+    const cookieStore = await cookies();
+    
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } }
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.delete({ name, ...options });
+          },
+        },
+      }
     );
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     
-    if (!error && data.session) {
-      const cookieStore = await cookies();
-      
-      // Set the exact cookie your middleware expects
-      cookieStore.set('sb-access-token', data.session.access_token, {
-        path: '/',
-        secure: true,
-        sameSite: 'lax',
-        maxAge: data.session.expires_in,
-      });
+    if (!error) {
+      return NextResponse.redirect(requestUrl.origin);
     }
   }
-  
-  // Return to the main page player
-  return NextResponse.redirect(requestUrl.origin);
+
+  // If validation fails, return user back to login with a parsing flag
+  return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_callback_failed`);
 }

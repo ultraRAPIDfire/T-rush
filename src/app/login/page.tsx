@@ -30,7 +30,7 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'GitHub OAuth failure';
+      const errorMessage = err instanceof Error ? err.message : 'GitHub Authentication failed';
       setMessage({ type: 'error', text: errorMessage });
       setLoading(false);
     }
@@ -39,6 +39,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full relative bg-[#050507] font-sans antialiased text-neutral-200 flex items-center justify-center p-4 overflow-hidden">
       <div className="w-full max-w-5xl bg-zinc-950/45 border border-zinc-900/80 backdrop-blur-3xl rounded-[32px] shadow-2xl relative z-10 flex flex-col md:flex-row min-h-[560px]">
+        
         <div className="flex-1 p-8 sm:p-12 lg:p-16 flex flex-col justify-between border-b border-zinc-900/60 md:border-b-0 md:border-r border-zinc-900/60">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-emerald-500 text-black font-black flex items-center justify-center rounded-xl text-lg">T</div>
@@ -75,6 +76,7 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Added "default" here so Next.js 16 Turbopack maps the routing endpoint cleanly
 export default async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -9,7 +8,6 @@ export default async function middleware(request: NextRequest) {
     },
   });
 
-  // Universal type-safe cookie management configuration 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,15 +38,13 @@ export default async function middleware(request: NextRequest) {
     }
   );
 
-  // Securely retrieve user metadata
   const { data: { user } } = await supabase.auth.getUser();
 
-  // If unauthenticated user tries to view the feed dashboard, kick them to login
+  // Route protection rules
   if (!user && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If already logged in user tries to view login page, kick them back to feed dashboard
   if (user && request.nextUrl.pathname.startsWith('/login')) {
     return NextResponse.redirect(new URL('/', request.url));
   }
