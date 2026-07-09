@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabaseClient';
 import Link from 'next/link';
 
@@ -7,27 +7,35 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
 
-  const handleGitHubLogin = async () => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://t-rush-zeta.vercel.app';
-      
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        // Crucial: Routes the handshake through the code exchange endpoint first
-        redirectTo: `${currentOrigin}/auth/callback`,
-        skipBrowserRedirect: false
-      },
+  // Active listener that force-redirects the instant the browser registers a valid token
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        window.location.href = '/';
+      }
     });
-      if (error) throw error;
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'GitHub OAuth initialization failure';
-      setMessage({ type: 'error', text: errorMessage });
-      setLoading(false);
-    }
-  };
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+    const handleGitHubLogin = async () => {
+        setLoading(true);
+        setMessage(null);
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              // Hardcode your production Vercel deployment URL destination parameter directly
+              redirectTo: 'https://t-rush-zeta.vercel.app',
+            },
+          });
+          if (error) throw error;
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'GitHub OAuth initialization failure';
+          setMessage({ type: 'error', text: errorMessage });
+          setLoading(false);
+        }
+      };
 
   return (
     <div className="min-h-screen w-full relative bg-[#050507] font-sans antialiased text-neutral-200 select-none flex items-center justify-center p-3 sm:p-4 overflow-x-hidden">
@@ -44,7 +52,7 @@ export default function LoginPage() {
       <div className="w-full max-w-5xl bg-zinc-950/45 border border-zinc-900/80 backdrop-blur-3xl rounded-[24px] sm:rounded-[32px] shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative z-10 overflow-hidden flex flex-col md:flex-row min-h-0 md:min-h-[560px] animate-in fade-in zoom-in-95 duration-500">
         
         {/* LEFT COLUMN: Mission Statement */}
-        <div className="flex-1 p-6 sm:p-10 lg:p-16 flex flex-col justify-between border-b border-zinc-900/60 md:border-b-0 md:border-r bg-gradient-to-br from-zinc-950/20 to-transparent gap-8 md:gap-0">
+        <div className="flex-1 p-6 sm:p-10 lg:p-16 flex flex-col justify-between border-b border-zinc-900/60 md:border-b-0 md:border-r border-zinc-900/60 bg-gradient-to-br from-zinc-950/20 to-transparent gap-8 md:gap-0">
           
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500 text-black font-black flex items-center justify-center rounded-xl shadow-lg shadow-emerald-500/20 text-base sm:text-lg animate-pulse">
