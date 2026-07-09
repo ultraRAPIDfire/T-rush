@@ -166,7 +166,7 @@ export default function Feed() {
           className="bg-zinc-950/60 hover:bg-rose-950/40 border border-zinc-800/40 hover:border-rose-900/40 backdrop-blur-2xl px-4 sm:px-5 py-2.5 sm:py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.6)] text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] transition-all text-neutral-400 hover:text-rose-400"
           title="Disconnect Stream Session"
         >
-          🚪 Exit
+          SIGN OUT
         </button>
         </div>
       </div>
